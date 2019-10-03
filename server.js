@@ -1,32 +1,33 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const http = require("http");
 const path = require("path");
 
 const app = express();
-const port = process.env.PORT;
-
-http.createServer(app);
+const http = require("http").createServer(app);
+const ExpressPeerServer = require("peer").ExpressPeerServer;
 
 app.use(express.static(path.join(__dirname, "/build")));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-let rooms = {};
-
+//Home
 app.get("/", (req, res) => {
   res.send(null, 200);
 });
 
-app.get("/room/:roomId", (req, res) => {
-  const roomId = req.params.roomId;
-  if (!rooms[roomId]) {
-    room[roomId] = {
-      participants: []
-    };
-  }
-});
+//Peer.js server
+const peerPort = process.env.PEER_PORT;
+const peer = app.listen(peerPort);
+const options = {
+  debug: true
+};
 
+const peerServer = ExpressPeerServer(peer, options);
+app.get("/room/:roomId", peerServer);
+
+//Listen
+const port = process.env.PORT;
 http.listen(port, () => {
   console.log(`connected to port ${port}`);
+  console.log(`connected to port ${peerPort}`);
 });
