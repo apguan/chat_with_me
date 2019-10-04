@@ -7,7 +7,7 @@ const Container = styled.nav`
   align-items: center;
   background-color: #7758c6;
   width: 100%;
-  height: 80px;
+  height: 60px;
   position: fixed;
   top: 0;
 `;

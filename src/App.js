@@ -3,13 +3,13 @@ import "./App.css";
 
 //Components
 import Navbar from "./components/Navbar";
-import WebCam from "./components/WebCam";
+import StreamView from "./components/StreamView";
 
 function App() {
   return (
     <div className="App">
       <Navbar />
-      <WebCam />
+      <StreamView />
     </div>
   );
 }

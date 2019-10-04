@@ -14,7 +14,10 @@
     "react-webcam": "^3.1.1",
     "redis": "^2.8.0",
     "simple-peer": "^9.6.0",
-    "styled-components": "^4.4.0"
+    "socket.io": "^2.3.0",
+    "socket.io-client": "^2.3.0",
+    "styled-components": "^4.4.0",
+    "uuid": "^3.3.3"
   },
   "proxy": "http://localhost:4000",
   "scripts": {
