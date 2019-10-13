@@ -67,9 +67,10 @@ io.on("connect", socket => {
     details.participants = details.participants
       .slice()
       .filter(pool => pool !== person.id);
+    if (!details.participants.length) delete details;
+
     socket.leave(room);
     io.to(room).emit("sync", details.participants);
-    console.log(details.participants);
     console.log("user disconnected");
   });
 });

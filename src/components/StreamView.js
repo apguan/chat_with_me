@@ -5,7 +5,7 @@ import { peer } from "./PeerConfigs";
 
 import VideoFrame from "./VideoFrame";
 
-import { Main, Participants } from "./Containers";
+import { Main, Participants, ButtonsContainer } from "./Containers";
 
 const socket = Sockets(window.location.pathname);
 
@@ -14,8 +14,10 @@ class StreamView extends Component {
     super(props);
     this.state = {
       myId: "",
-      pool: [],
-      streams: []
+      pool: {},
+      streams: {},
+      primaryStream: null,
+      secondaryStreams: []
     };
   }
 
@@ -27,29 +29,54 @@ class StreamView extends Component {
     });
 
     socket.on("sync", participants => {
-      const pool = participants.filter(data => data !== this.state.myId);
-      this.setState({
-        pool
-      });
-    });
+      const pool = participants.reduce((acc, val) => {
+        if (val !== this.state.myId) {
+          acc[val] = true;
+        }
 
-    peer.on("call", async call => {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: true
-      });
+        return acc;
+      }, {});
+      const poolArr = Object.keys(pool);
 
-      call.answer(stream);
+      this.setState(
+        {
+          pool: poolArr
+        },
+        async () => {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: {
+              optional: [
+                { minFrameRate: 30 },
+                { maxFrameRate: 60 },
+                { maxWidth: 1280 },
+                { maxHeigth: 720 }
+              ]
+            }
+          });
 
-      call.on("stream", remoteStream => {
-        const { streams } = this.state;
-        console.log("THIS IS THE REMOTE:", remoteStream);
-        const newStreams = streams.concat(remoteStream);
-        console.log(remoteStream);
-        this.setState({
-          streams: newStreams
-        });
-      });
+          poolArr.map(async user => {
+            peer.call(user, stream);
+          });
+
+          peer.on("call", async call => {
+            call.answer(stream);
+            call.on("stream", remoteStream => {
+              const { streams } = this.state;
+              const newStreams = {
+                ...streams,
+                [remoteStream.id]: remoteStream
+              };
+              const arr = Object.values(newStreams);
+              this.setState({
+                streams: newStreams,
+                primaryStream: arr[0],
+                secondaryStreams: arr.slice(1)
+              });
+            });
+          });
+        }
+      );
     });
   };
 
@@ -65,7 +92,6 @@ class StreamView extends Component {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: {
-          mandatory: { minAspectRatio: 1.333, maxAspectRatio: 1.334 },
           optional: [
             { minFrameRate: 30 },
             { maxFrameRate: 60 },
@@ -74,9 +100,6 @@ class StreamView extends Component {
           ]
         }
       });
-
-      console.log(stream.id);
-
       peer.call(user, stream);
     });
   };
@@ -86,18 +109,32 @@ class StreamView extends Component {
   };
 
   render = () => {
-    const { streams } = this.state;
+    const { primaryStream, secondaryStreams } = this.state;
+
     return (
       <div>
         <Main>
+          <VideoFrame
+            src={primaryStream}
+            height={window.screen.height * 0.7}
+            width={window.screen.width * 0.8}
+          />
           <Participants>
-            {streams.map(stream => {
-              return <VideoFrame src={stream} height="120px" width="150px" />;
+            {secondaryStreams.map(stream => {
+              return (
+                <VideoFrame
+                  src={stream}
+                  height={window.screen.height * 0.3}
+                  width={window.screen.width * 0.2}
+                />
+              );
             })}
           </Participants>
+          <ButtonsContainer>
+            <button onClick={this.connect}>Connect</button>
+            <button onClick={this.disconnect}>Hang Up</button>
+          </ButtonsContainer>
         </Main>
-        <button onClick={this.connect}>Connect</button>
-        <button onClick={this.disconnect}>Hang Up</button>
       </div>
     );
   };
